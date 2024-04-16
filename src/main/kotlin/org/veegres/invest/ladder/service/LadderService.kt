@@ -4,11 +4,8 @@ import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
 import org.veegres.invest.ladder.dto.AccountDto
 import org.veegres.invest.ladder.dto.InstrumentDto
-import ru.tinkoff.piapi.contract.v1.FindInstrumentRequest
-import ru.tinkoff.piapi.contract.v1.GetAccountsRequest
+import ru.tinkoff.piapi.contract.v1.*
 import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceBlockingStub
-import ru.tinkoff.piapi.contract.v1.OpenSandboxAccountRequest
-import ru.tinkoff.piapi.contract.v1.OpenSandboxAccountResponse
 import ru.tinkoff.piapi.contract.v1.OperationsServiceGrpc.OperationsServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.SandboxServiceGrpc.SandboxServiceBlockingStub
@@ -43,15 +40,18 @@ class LadderService(
     }
 
     fun test() {
-        val request = GetAccountsRequest.newBuilder().build()
-        val accounts = usersService.getAccounts(request)
-        val account = accounts.getAccounts(1).status
+        val request = PostOrderRequest
+            .newBuilder()
+            .setQuantity(1)
+            .setAccountId("b74112d3-bf74-4013-b5eb-643f02d6c8e0")
+            .setInstrumentId("c190ff1f-1447-4227-b543-316332699ca5")
+            .setOrderId(UUID.randomUUID().toString())
+            .setDirection(OrderDirection.ORDER_DIRECTION_BUY)
+            .setOrderType(OrderType.ORDER_TYPE_BESTPRICE)
+            .build()
+        val response = sandboxService.postSandboxOrder(request)
 
-        val requestInst = FindInstrumentRequest.newBuilder().setQuery("ОФЗ").build()
-        val instruments = instrumentsService.findInstrument(requestInst)
-        val tt = instruments.instrumentsCount
-
-        LOG.info(tt.toString())
+        LOG.info(response.toString())
     }
 
     companion object {

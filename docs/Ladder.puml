@@ -1,0 +1,28 @@
+@startuml
+
+object Ladder {
+  id = UUID
+
+  account_id = String
+  instrument_id = UUID
+  direction = [BUY, SELL]
+  quantity = BigDecimal
+
+  type = [UP, DOWN, NEVER_MIND]
+  startTime = Instant
+  endTime = Instant?
+  startPrice = BigDecimal
+  endPrice = BigDecimal?
+  interval = Duration
+  status = [IN_PROGRESS, CANCELLED, ENDED]
+
+  // stopRisk - процент риска на который не готовы идти
+}
+
+object LadderOrder {
+    id: UUID
+    ladder_id: UUID
+    order_id: String
+}
+
+@enduml
