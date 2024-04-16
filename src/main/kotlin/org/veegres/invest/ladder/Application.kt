@@ -11,6 +11,6 @@ object Application {
 
     @JvmStatic
     fun main(args: Array<String>) {
-        Micronaut.build(*args).banner(false).start()
+        Micronaut.build(*args).banner(true).start()
     }
 }

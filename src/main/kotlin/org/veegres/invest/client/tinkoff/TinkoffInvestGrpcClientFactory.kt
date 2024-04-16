@@ -2,13 +2,11 @@ package org.veegres.invest.client.tinkoff
 
 import io.grpc.Channel
 import io.micronaut.context.annotation.Factory
-import jakarta.inject.Named
 import jakarta.inject.Singleton
 import ru.tinkoff.piapi.contract.v1.*
 
 @Factory
 class TinkoffInvestGrpcClientFactory(
-    @Named("sandboxChannel")
     private val channel: Channel
 ) {
 
@@ -30,5 +28,10 @@ class TinkoffInvestGrpcClientFactory(
     @Singleton
     fun getUserServiceSync(): UsersServiceGrpc.UsersServiceBlockingStub {
         return UsersServiceGrpc.newBlockingStub(channel)
+    }
+
+    @Singleton
+    fun getInstrumentsServiceSync(): InstrumentsServiceGrpc.InstrumentsServiceBlockingStub {
+        return InstrumentsServiceGrpc.newBlockingStub(channel)
     }
 }

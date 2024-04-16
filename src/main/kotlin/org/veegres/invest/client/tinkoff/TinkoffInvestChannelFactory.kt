@@ -6,6 +6,8 @@ import io.grpc.Metadata
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder
 import io.grpc.stub.MetadataUtils
 import io.micronaut.context.annotation.Factory
+import io.micronaut.context.annotation.Replaces
+import io.micronaut.context.annotation.Requires
 import jakarta.inject.Named
 import jakarta.inject.Singleton
 import java.util.concurrent.TimeUnit
@@ -15,6 +17,7 @@ class TinkoffInvestChannelFactory(private val config: TinkoffInvestConfiguration
 
     @Singleton
     @Named("sandboxChannel")
+    @Requires(property = "client.tinkoff.sandbox.enable", pattern = "true")
     fun sandboxChannel(): Channel {
         val headers = createHeaders(config.`app-name`, config.sandbox.token)
         return createChannel(config.sandbox.host, config.sandbox.port, headers)
@@ -22,6 +25,7 @@ class TinkoffInvestChannelFactory(private val config: TinkoffInvestConfiguration
 
     @Singleton
     @Named("writeReadChannel")
+    @Requires(property = "client.tinkoff.sandbox.enable", pattern = "false")
     fun writeReadChannel(): Channel {
         val headers = createHeaders(config.`app-name`, config.`read-write`.token)
         return createChannel(config.`read-write`.host, config.`read-write`.port, headers)
