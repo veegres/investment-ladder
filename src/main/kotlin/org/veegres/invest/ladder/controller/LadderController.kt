@@ -5,16 +5,17 @@ import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
 import io.micronaut.http.annotation.Post
-import org.veegres.invest.ladder.client.tinkoff.contracts.TinkoffClient
+import org.veegres.invest.client.tinkoff.TinkoffInvestGrpcClientFactory
+import org.veegres.invest.ladder.service.LadderService
 import org.veegres.invest.ladder.user.User
 import org.veegres.invest.ladder.user.UserRepository
 
-@Controller("/invest-ladder")
-class InvestLadderController(private val tinkoffClient: TinkoffClient, val userRepository: UserRepository) {
+@Controller("/invest/ladder")
+class LadderController(private val ladderService: LadderService, val userRepository: UserRepository) {
 
-    @Get(uri="/one")
+    @Post(uri="/sandbox/account")
     fun index(): String {
-        return tinkoffClient.getAccounts().toString()
+        return ladderService.openSandboxAccount().toString()
     }
 
     @Get(uri="/two", produces = [MediaType.APPLICATION_JSON])

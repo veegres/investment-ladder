@@ -7,7 +7,7 @@ import java.util.Date
 import jakarta.inject.Singleton
 
 @Singleton
-class HelloJob {
+class LadderJob {
 
     @Scheduled(fixedDelay = "10s")
     fun executeEveryTen() {
@@ -20,6 +20,6 @@ class HelloJob {
     }
 
     companion object {
-        private val LOG = LoggerFactory.getLogger(HelloJob::class.java)
+        private val LOG = LoggerFactory.getLogger(LadderJob::class.java)
     }
 }
