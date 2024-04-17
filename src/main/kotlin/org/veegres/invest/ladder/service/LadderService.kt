@@ -4,6 +4,9 @@ import jakarta.inject.Singleton
 import org.slf4j.LoggerFactory
 import org.veegres.invest.ladder.dto.AccountDto
 import org.veegres.invest.ladder.dto.InstrumentDto
+import org.veegres.invest.ladder.dto.LadderDto
+import org.veegres.invest.ladder.entity.Ladder
+import org.veegres.invest.ladder.entity.LadderRepository
 import ru.tinkoff.piapi.contract.v1.*
 import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.OperationsServiceGrpc.OperationsServiceBlockingStub
@@ -18,7 +21,8 @@ class LadderService(
     private val operationService: OperationsServiceBlockingStub,
     private val ordersService: OrdersServiceBlockingStub,
     private val usersService: UsersServiceBlockingStub,
-    private val instrumentsService: InstrumentsServiceBlockingStub
+    private val instrumentsService: InstrumentsServiceBlockingStub,
+    private val ladderRepository: LadderRepository
 ) {
 
     fun getAccounts(): List<AccountDto> {
@@ -37,6 +41,11 @@ class LadderService(
             InstrumentDto(it.name, it.ticker, UUID.fromString(it.uid), it.instrumentType)
         }
         return dtos
+    }
+
+    fun createLadder(ladderDto: LadderDto) {
+        val ladder = Ladder.fromDto(ladderDto)
+        ladderRepository.save(ladder)
     }
 
     fun test() {

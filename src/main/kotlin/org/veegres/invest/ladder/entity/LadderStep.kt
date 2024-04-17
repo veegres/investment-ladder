@@ -9,13 +9,13 @@ import java.time.Instant
 import java.util.*
 
 @MappedEntity
-data class LadderOrder(
+data class LadderStep(
     @Id
     val id: UUID,
     val ladderId: UUID,
     val orderId: String,
-    val createdOn: Instant
+    val createdOn: Instant,
 )
 
 @JdbcRepository(dialect = Dialect.H2)
-interface LadderOrderRepository : CrudRepository<LadderOrder, UUID>
+interface LadderStepRepository : CrudRepository<LadderStep, UUID>
