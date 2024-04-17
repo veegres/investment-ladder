@@ -2,9 +2,11 @@ package org.veegres.invest.ladder.entity
 
 import io.micronaut.data.annotation.Id
 import io.micronaut.data.annotation.MappedEntity
+import io.micronaut.data.annotation.Query
 import io.micronaut.data.jdbc.annotation.JdbcRepository
 import io.micronaut.data.model.query.builder.sql.Dialect
 import io.micronaut.data.repository.CrudRepository
+import jakarta.transaction.Transactional
 import org.veegres.invest.ladder.dto.LadderDto
 import java.math.BigDecimal
 import java.time.Duration
@@ -15,7 +17,7 @@ import java.util.*
 data class Ladder(
     @Id
     val id: UUID,
-    val accountId: String,
+    val accountId: UUID,
     val instrumentId: UUID,
     val stepQuantity: Long,
     val stepInterval: Duration,
@@ -28,32 +30,29 @@ data class Ladder(
     val firstOrderOn: Instant?,
     val lastOrderPrice: BigDecimal?,
     val lastOrderOn: Instant?
-) {
+)
 
-    companion object {
-        fun fromDto(dto: LadderDto): Ladder {
-            return Ladder(
-                id = UUID.randomUUID(),
-                accountId = dto.accountId,
-                instrumentId = dto.instrumentId,
-                stepQuantity = dto.stepQuantity,
-                stepInterval = Duration.ofSeconds(dto.stepInterval),
-                type = dto.type,
-                direction = dto.direction,
-                status = LadderStatus.IN_PROGRESS,
-                startTime = dto.startTime,
-                endTime = dto.endTime,
-                firstOrderPrice = null,
-                firstOrderOn = null,
-                lastOrderPrice = null,
-                lastOrderOn = null
-            )
-        }
-    }
+fun LadderDto.toLadder(): Ladder {
+    return Ladder(
+        id = UUID.randomUUID(),
+        accountId = this.accountId,
+        instrumentId = this.instrumentId,
+        stepQuantity = this.stepQuantity,
+        stepInterval = Duration.ofSeconds(this.stepInterval),
+        type = this.type,
+        direction = this.direction,
+        status = LadderStatus.IN_PROGRESS,
+        startTime = this.startTime,
+        endTime = this.endTime,
+        firstOrderPrice = null,
+        firstOrderOn = null,
+        lastOrderPrice = null,
+        lastOrderOn = null
+    )
 }
 
 enum class LadderStatus {
-    IN_PROGRESS, CANCELLED, ENDED
+    IN_PROGRESS, LOCKED, CANCELLED,
 }
 
 enum class LadderDirection {
@@ -61,8 +60,30 @@ enum class LadderDirection {
 }
 
 enum class LadderType {
-    UP, DOWN, NO_MATTER
+    NO_MATTER, // TODO UP, DOWN,
 }
 
 @JdbcRepository(dialect = Dialect.H2)
-interface LadderRepository : CrudRepository<Ladder, UUID>
+abstract class LadderRepository : CrudRepository<Ladder, UUID> {
+
+    @Query("SELECT * FROM LADDER l WHERE l.STATUS = :status AND l.START_TIME <= :now AND :now <= l.END_TIME FOR UPDATE", nativeQuery = true)
+    abstract fun findLadders(now: Instant, status: LadderStatus): List<Ladder>
+
+    @Query("UPDATE LADDER l SET l.STATUS = :status WHERE l.ID IN (:ids)", nativeQuery = true)
+    abstract fun updateStatus(ids: List<UUID>, status: LadderStatus)
+
+    @Transactional
+    open fun findLaddersAndLock(now: Instant, status: LadderStatus): List<Ladder> {
+        val ladders = findLadders(now, status)
+        val ids = ladders.map { it.id }
+        updateStatus(ids, LadderStatus.LOCKED)
+        return ladders
+    }
+
+    @Query("UPDATE LADDER l " +
+           "SET l.STATUS = :status, " +
+           "    l.FIRST_ORDER_PRICE = :firstOrderPrice, l.FIRST_ORDER_ON = :firstOrderOn, " +
+           "    l.LAST_ORDER_PRICE = :lastOrderPrice, l.LAST_ORDER_ON = :lastOrderOn " +
+           "WHERE l.ID = :id", nativeQuery = true)
+    abstract fun updateByStepAndUnlock(id: UUID, status: LadderStatus, firstOrderPrice: BigDecimal, firstOrderOn: Instant, lastOrderPrice: BigDecimal, lastOrderOn: Instant)
+}

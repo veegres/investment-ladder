@@ -1,12 +1,14 @@
 package org.veegres.invest.ladder.service
 
 import jakarta.inject.Singleton
+import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.veegres.invest.ladder.dto.AccountDto
 import org.veegres.invest.ladder.dto.InstrumentDto
 import org.veegres.invest.ladder.dto.LadderDto
 import org.veegres.invest.ladder.entity.Ladder
 import org.veegres.invest.ladder.entity.LadderRepository
+import org.veegres.invest.ladder.entity.toLadder
 import ru.tinkoff.piapi.contract.v1.*
 import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.OperationsServiceGrpc.OperationsServiceBlockingStub
@@ -44,17 +46,25 @@ class LadderService(
     }
 
     fun createLadder(ladderDto: LadderDto) {
-        val ladder = Ladder.fromDto(ladderDto)
+        val ladder = ladderDto.toLadder()
         ladderRepository.save(ladder)
     }
 
     fun test() {
+        val requestPayIn = SandboxPayInRequest
+            .newBuilder()
+            .setAccountId("b74112d3-bf74-4013-b5eb-643f02d6c8e0")
+            .setAmount(MoneyValue.newBuilder().setUnits(10000).build())
+            .build()
+        sandboxService.sandboxPayIn(requestPayIn)
+        val orderId = UUID.randomUUID()
+        LOG.info("orderId idempotent $orderId")
         val request = PostOrderRequest
             .newBuilder()
             .setQuantity(1)
             .setAccountId("b74112d3-bf74-4013-b5eb-643f02d6c8e0")
             .setInstrumentId("c190ff1f-1447-4227-b543-316332699ca5")
-            .setOrderId(UUID.randomUUID().toString())
+            .setOrderId(orderId.toString())
             .setDirection(OrderDirection.ORDER_DIRECTION_BUY)
             .setOrderType(OrderType.ORDER_TYPE_BESTPRICE)
             .build()
