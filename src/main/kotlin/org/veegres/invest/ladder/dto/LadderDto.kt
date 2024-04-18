@@ -9,7 +9,7 @@ import java.util.*
 
 @Serdeable
 data class LadderDto(
-    val accountId: UUID,
+    val accountId: String,
     val instrumentId: UUID,
     val stepQuantity: Long,
     @Schema(description="Interval in seconds")

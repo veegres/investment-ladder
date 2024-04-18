@@ -14,11 +14,13 @@ class LadderController(
     private val ladderService: LadderService
 ) {
 
+    // TODO move to different controller
     @Get(uri = "/accounts", produces = [MediaType.APPLICATION_JSON])
     fun getAccounts(): List<AccountDto> {
         return ladderService.getAccounts()
     }
 
+    // TODO move to different controller
     @Get(uri = "/instruments", produces = [MediaType.APPLICATION_JSON])
     fun findInstruments(@QueryValue query: String): List<InstrumentDto> {
         return ladderService.findInstruments(query)

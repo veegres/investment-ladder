@@ -17,7 +17,7 @@ import java.util.*
 data class Ladder(
     @Id
     val id: UUID,
-    val accountId: UUID,
+    val accountId: String,
     val instrumentId: UUID,
     val stepQuantity: Long,
     val stepInterval: Duration,
@@ -52,7 +52,7 @@ fun LadderDto.toLadder(): Ladder {
 }
 
 enum class LadderStatus {
-    IN_PROGRESS, LOCKED, CANCELLED,
+    IN_PROGRESS, LOCKED // TODO add CANCELLED behavior
 }
 
 enum class LadderDirection {
@@ -60,7 +60,7 @@ enum class LadderDirection {
 }
 
 enum class LadderType {
-    NO_MATTER, // TODO UP, DOWN,
+    NO_MATTER, // TODO UP, DOWN logic
 }
 
 @JdbcRepository(dialect = Dialect.H2)
@@ -73,11 +73,15 @@ abstract class LadderRepository : CrudRepository<Ladder, UUID> {
     abstract fun updateStatus(ids: List<UUID>, status: LadderStatus)
 
     @Transactional
-    open fun findLaddersAndLock(now: Instant, status: LadderStatus): List<Ladder> {
+    open fun findReadyLaddersAndLock(now: Instant, status: LadderStatus): List<Ladder> {
         val ladders = findLadders(now, status)
-        val ids = ladders.map { it.id }
+        val laddersReady = ladders.filter {
+            val readyTime = it.lastOrderOn?.plusSeconds(it.stepInterval.seconds) ?: Instant.MIN
+            now.isAfter(readyTime)
+        }
+        val ids = laddersReady.map { it.id }
         updateStatus(ids, LadderStatus.LOCKED)
-        return ladders
+        return laddersReady
     }
 
     @Query("UPDATE LADDER l " +

@@ -21,26 +21,24 @@ class LadderStepJob(
     val ladderStepService: LadderStepService
 ) {
 
+    // TODO idea: separate lastOrderTime from lastTryExecuteStepTime. benefits: no retries if something gonna happen
     @Scheduled(fixedDelay = "15s", initialDelay = "5s")
     fun handle() {
         LOG.info("Job started processing")
         val now = Instant.now()
-        val ladders = ladderRepository.findLaddersAndLock(now, LadderStatus.IN_PROGRESS)
-        val laddersReady = ladders.filter {
-            val readyTime = it.lastOrderOn?.plusSeconds(it.stepInterval.seconds) ?: Instant.MIN
-            now.isAfter(readyTime)
-        }
-        LOG.info("Next ladders are going to be execute step ${laddersReady.map { it.id }}")
+        val ladders = ladderRepository.findReadyLaddersAndLock(now, LadderStatus.IN_PROGRESS)
+        LOG.info("Next ladders are going to be execute step ${ladders.map { it.id }}")
         runBlocking {
-            val deferreds = laddersReady.map { ladder ->
+            val deferreds = ladders.map { ladder ->
                 async(Dispatchers.Default) {
-                    LOG.info("Start step execution for ${ladder.id}")
+                    LOG.info("Start step execution for ${ladder.id} with interval ${ladder.stepInterval}")
                     try {
                         val step = ladder.toStep()
                         val execStep = ladderStepService.execute(step)
-                        updateLadderAndStep(ladder, execStep)
-                    } catch (re: RuntimeException){
+                        updateLadderAndStepWithUnlock(ladder, execStep)
+                    } catch (re: RuntimeException) { // TODO need different behavior for errors, and notifications for customer
                         LOG.error("Step executed with error ${re.message}")
+                        unlockLadder(ladder)
                     }
                 }
             }
@@ -49,7 +47,7 @@ class LadderStepJob(
         LOG.info("Job ended processing")
     }
 
-    private fun updateLadderAndStep(ladder: Ladder, execStep: StepExecuted) {
+    private fun updateLadderAndStepWithUnlock(ladder: Ladder, execStep: StepExecuted) {
         val ladderStep = execStep.toLadderStep(ladder.id)
         val firstPrice = ladder.firstOrderPrice ?: execStep.price
         val firstOn = ladder.firstOrderOn ?: Instant.now()
@@ -57,6 +55,10 @@ class LadderStepJob(
         val lastOn = Instant.now()
         ladderStepRepository.save(ladderStep)
         ladderRepository.updateByStepAndUnlock(ladder.id, LadderStatus.IN_PROGRESS, firstPrice, firstOn, lastPrice, lastOn)
+    }
+
+    private fun unlockLadder(ladder: Ladder) {
+        ladderRepository.updateStatus(listOf(ladder.id), LadderStatus.IN_PROGRESS)
     }
 
     companion object {

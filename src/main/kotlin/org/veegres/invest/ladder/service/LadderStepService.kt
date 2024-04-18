@@ -11,15 +11,13 @@ import ru.tinkoff.piapi.contract.v1.OrderDirection
 import ru.tinkoff.piapi.contract.v1.OrderType
 import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.PostOrderRequest
-import ru.tinkoff.piapi.contract.v1.SandboxServiceGrpc.SandboxServiceBlockingStub
 import java.math.BigDecimal
 import java.time.Instant
 import java.util.*
 
 @Singleton
 class LadderStepService(
-    private val ordersService: OrdersServiceBlockingStub,
-    private val sandboxService: SandboxServiceBlockingStub
+    private val ordersService: OrdersServiceBlockingStub
 ) {
 
     fun execute(step: Step): StepExecuted {
@@ -27,15 +25,15 @@ class LadderStepService(
         val request = PostOrderRequest
             .newBuilder()
             .setQuantity(step.stepQuantity)
-            .setAccountId(step.accountId.toString())
+            .setAccountId(step.accountId)
             .setInstrumentId(step.instrumentId.toString())
             .setOrderId(orderId)
             .setDirection(OrderDirection.ORDER_DIRECTION_BUY)
             .setOrderType(OrderType.ORDER_TYPE_BESTPRICE)
             .build()
-        val response = sandboxService.postSandboxOrder(request)
+        val response = ordersService.postOrder(request)
         val executed = StepExecuted(
-            orderId = UUID.fromString(response.orderId),
+            orderId = response.orderId,
             price = response.executedOrderPrice.toBigDecimal()
         )
         LOG.info("Step $step was executed $executed")
@@ -49,7 +47,7 @@ class LadderStepService(
 
 data class Step(
     val ladderId: UUID,
-    val accountId: UUID,
+    val accountId: String,
     val instrumentId: UUID,
     val stepQuantity: Long,
     val direction: LadderDirection,
@@ -66,7 +64,7 @@ fun Ladder.toStep(): Step {
 }
 
 data class StepExecuted(
-    val orderId: UUID,
+    val orderId: String,
     val price: BigDecimal
 )
 
@@ -74,7 +72,7 @@ fun StepExecuted.toLadderStep(ladderId: UUID): LadderStep {
     return LadderStep(
         id = UUID.randomUUID(),
         ladderId = ladderId,
-        orderId = this.orderId.toString(),
+        orderId = this.orderId,
         createdOn = Instant.now()
     )
 }
