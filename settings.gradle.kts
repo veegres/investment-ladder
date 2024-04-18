@@ -1,4 +1,4 @@
 
 
-rootProject.name="invest-ladder"
+rootProject.name="investment-ladder"
 
