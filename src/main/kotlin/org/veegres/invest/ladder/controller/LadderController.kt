@@ -5,8 +5,6 @@ import io.micronaut.http.annotation.*
 import org.veegres.invest.ladder.dto.AccountDto
 import org.veegres.invest.ladder.dto.InstrumentDto
 import org.veegres.invest.ladder.dto.LadderDto
-import org.veegres.invest.ladder.entity.Ladder
-import org.veegres.invest.ladder.entity.LadderRepository
 import org.veegres.invest.ladder.service.LadderService
 
 @Controller("/invest/ladder")

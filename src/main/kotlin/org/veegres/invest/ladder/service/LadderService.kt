@@ -1,12 +1,10 @@
 package org.veegres.invest.ladder.service
 
 import jakarta.inject.Singleton
-import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import org.veegres.invest.ladder.dto.AccountDto
 import org.veegres.invest.ladder.dto.InstrumentDto
 import org.veegres.invest.ladder.dto.LadderDto
-import org.veegres.invest.ladder.entity.Ladder
 import org.veegres.invest.ladder.entity.LadderRepository
 import org.veegres.invest.ladder.entity.toLadder
 import ru.tinkoff.piapi.contract.v1.*
