@@ -1,5 +1,6 @@
 package org.veegres.invest.ladder.controller
 
+import io.micronaut.http.HttpStatus
 import io.micronaut.http.MediaType
 import io.micronaut.http.annotation.*
 import org.veegres.invest.ladder.dto.AccountDto
@@ -7,7 +8,7 @@ import org.veegres.invest.ladder.dto.InstrumentDto
 import org.veegres.invest.ladder.dto.LadderDto
 import org.veegres.invest.ladder.service.LadderService
 
-@Controller("/invest/ladder")
+@Controller("/investment/ladders")
 class LadderController(
     private val ladderService: LadderService
 ) {
@@ -25,8 +26,14 @@ class LadderController(
     }
 
     @Post(uri = "/", produces = [MediaType.APPLICATION_JSON])
-    fun createLadderSchedule(@Body ladderDto: LadderDto) {
+    @Status(HttpStatus.CREATED)
+    fun createLadder(@Body ladderDto: LadderDto) {
         return ladderService.createLadder(ladderDto)
+    }
+
+    @Get(uri = "/", produces = [MediaType.APPLICATION_JSON])
+    fun getLadders(): List<LadderDto> {
+        return ladderService.getLadders()
     }
 
     @Post(uri = "/test")

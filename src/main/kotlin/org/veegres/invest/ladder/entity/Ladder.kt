@@ -51,6 +51,19 @@ fun LadderDto.toLadder(): Ladder {
     )
 }
 
+fun Ladder.toLadderDto(): LadderDto {
+    return LadderDto(
+        accountId = this.accountId,
+        instrumentId = this.instrumentId,
+        stepQuantity = this.stepQuantity,
+        stepInterval = this.stepInterval.toSeconds(),
+        type = this.type,
+        direction = this.direction,
+        startTime = this.startTime,
+        endTime = this.endTime
+    )
+}
+
 enum class LadderStatus {
     IN_PROGRESS, LOCKED // TODO add CANCELLED behavior
 }
@@ -66,15 +79,18 @@ enum class LadderType {
 @JdbcRepository(dialect = Dialect.H2)
 abstract class LadderRepository : CrudRepository<Ladder, UUID> {
 
-    @Query("SELECT * FROM LADDER l WHERE l.STATUS = :status AND l.START_TIME <= :now AND :now <= l.END_TIME FOR UPDATE", nativeQuery = true)
-    abstract fun findLadders(now: Instant, status: LadderStatus): List<Ladder>
+    @Query(
+        "SELECT * FROM LADDER l WHERE l.STATUS in (:status) AND l.START_TIME <= :now AND :now <= l.END_TIME FOR UPDATE",
+        nativeQuery = true
+    )
+    abstract fun findLadders(now: Instant, status: List<LadderStatus>): List<Ladder>
 
     @Query("UPDATE LADDER l SET l.STATUS = :status WHERE l.ID IN (:ids)", nativeQuery = true)
     abstract fun updateStatus(ids: List<UUID>, status: LadderStatus)
 
     @Transactional
     open fun findReadyLaddersAndLock(now: Instant, status: LadderStatus): List<Ladder> {
-        val ladders = findLadders(now, status)
+        val ladders = findLadders(now, listOf(status))
         val laddersReady = ladders.filter {
             val readyTime = it.lastOrderOn?.plusSeconds(it.stepInterval.seconds) ?: Instant.MIN
             now.isAfter(readyTime)
@@ -84,10 +100,19 @@ abstract class LadderRepository : CrudRepository<Ladder, UUID> {
         return laddersReady
     }
 
-    @Query("UPDATE LADDER l " +
-           "SET l.STATUS = :status, " +
-           "    l.FIRST_ORDER_PRICE = :firstOrderPrice, l.FIRST_ORDER_ON = :firstOrderOn, " +
-           "    l.LAST_ORDER_PRICE = :lastOrderPrice, l.LAST_ORDER_ON = :lastOrderOn " +
-           "WHERE l.ID = :id", nativeQuery = true)
-    abstract fun updateByStepAndUnlock(id: UUID, status: LadderStatus, firstOrderPrice: BigDecimal, firstOrderOn: Instant, lastOrderPrice: BigDecimal, lastOrderOn: Instant)
+    @Query(
+        "UPDATE LADDER l " +
+                "SET l.STATUS = :status, " +
+                "    l.FIRST_ORDER_PRICE = :firstOrderPrice, l.FIRST_ORDER_ON = :firstOrderOn, " +
+                "    l.LAST_ORDER_PRICE = :lastOrderPrice, l.LAST_ORDER_ON = :lastOrderOn " +
+                "WHERE l.ID = :id", nativeQuery = true
+    )
+    abstract fun updateByStepAndUnlock(
+        id: UUID,
+        status: LadderStatus,
+        firstOrderPrice: BigDecimal,
+        firstOrderOn: Instant,
+        lastOrderPrice: BigDecimal,
+        lastOrderOn: Instant
+    )
 }

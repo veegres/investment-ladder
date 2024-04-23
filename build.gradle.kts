@@ -49,6 +49,8 @@ dependencies {
 
     implementation("org.telegram:telegrambots-longpolling:7.2.1")
     implementation("org.telegram:telegrambots-client:7.2.1")
+
+    testImplementation("io.micronaut.test:micronaut-test-rest-assured")
 }
 
 application {

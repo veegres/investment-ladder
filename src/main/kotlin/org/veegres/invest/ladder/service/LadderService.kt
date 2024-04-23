@@ -6,13 +6,16 @@ import org.veegres.invest.ladder.dto.AccountDto
 import org.veegres.invest.ladder.dto.InstrumentDto
 import org.veegres.invest.ladder.dto.LadderDto
 import org.veegres.invest.ladder.entity.LadderRepository
+import org.veegres.invest.ladder.entity.LadderStatus.*
 import org.veegres.invest.ladder.entity.toLadder
+import org.veegres.invest.ladder.entity.toLadderDto
 import ru.tinkoff.piapi.contract.v1.*
 import ru.tinkoff.piapi.contract.v1.InstrumentsServiceGrpc.InstrumentsServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.OperationsServiceGrpc.OperationsServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.OrdersServiceGrpc.OrdersServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.SandboxServiceGrpc.SandboxServiceBlockingStub
 import ru.tinkoff.piapi.contract.v1.UsersServiceGrpc.UsersServiceBlockingStub
+import java.time.Instant
 import java.util.*
 
 @Singleton
@@ -41,6 +44,10 @@ class LadderService(
             InstrumentDto(it.name, it.ticker, UUID.fromString(it.uid), it.instrumentType)
         }
         return dtos
+    }
+
+    fun getLadders(): List<LadderDto> {
+        return ladderRepository.findLadders(Instant.now(), listOf(LOCKED, IN_PROGRESS)).map { it.toLadderDto() }
     }
 
     fun createLadder(ladderDto: LadderDto) {
